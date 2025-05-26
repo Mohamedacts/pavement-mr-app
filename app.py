@@ -68,4 +68,106 @@ segment_id = st.text_input("Segment ID (required)")
 
 with st.expander("Guidance"):
     st.info(ASTM_GUIDANCE["length"]["info"])
-length = st.number_input("Segment Length (m)", min
+length = st.number_input("Segment Length (m)", min_value=0.0)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["width"]["info"])
+width = st.number_input("Segment Width (m)", min_value=0.0)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["layer_type"]["info"])
+layer_type = st.text_input("Layer Type")
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["thickness"]["info"])
+thickness = st.number_input("Layer Thickness (mm)", min_value=0.0)
+
+# Step 3: Condition Survey
+st.header("3. Condition Survey")
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["pci"]["info"])
+pci = st.number_input("Pavement Condition Index (PCI, 0-100)", min_value=0, max_value=100)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["distress_type"]["info"])
+if pavement_type == "Flexible":
+    distress_type = st.selectbox("Distress Type", FLEXIBLE_DISTRESS_TYPES)
+else:
+    distress_type = st.selectbox("Distress Type", RIGID_DISTRESS_TYPES)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["severity"]["info"])
+severity = st.selectbox("Severity Level", ["Low", "Medium", "High"])
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["extent"]["info"])
+extent = st.number_input("Extent of Distress (%)", min_value=0, max_value=100)
+
+# Step 4: Traffic and Environment
+st.header("4. Traffic and Environment")
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["traffic_volume"]["info"])
+traffic_volume = st.number_input("Traffic Volume (AADT)", min_value=0)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["load_type"]["info"])
+load_type = st.text_input("Load Type (e.g., ESALs)")
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["climate_zone"]["info"])
+climate_zone = st.text_input("Climate Zone")
+
+# Step 5: M&R Options
+st.header("5. Maintenance & Rehabilitation Options")
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["treatment"]["info"])
+treatment = st.selectbox("Select Treatment", TREATMENTS)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["treatment_effectiveness"]["info"])
+treatment_effectiveness = st.text_input("Expected Effectiveness (years of life extension)")
+
+# Step 6: Cost and Resources
+st.header("6. Cost and Resource Inputs")
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["unit_cost"]["info"])
+unit_cost = st.number_input("Unit Cost ($/m²)", min_value=0.0)
+
+with st.expander("Guidance"):
+    st.info(ASTM_GUIDANCE["budget"]["info"])
+budget = st.number_input("Available Budget ($)", min_value=0.0)
+
+# Step 7: Review & Validation
+st.header("7. Review Inputs")
+inputs = {
+    "segment_id": segment_id,
+    "length": length,
+    "width": width,
+    "layer_type": layer_type,
+    "thickness": thickness,
+    "pci": pci,
+}
+required_fields = ["segment_id", "length", "width", "layer_type", "thickness", "pci"]
+missing = validate_required_fields(inputs, required_fields)
+if missing:
+    st.warning(f"Missing required fields per ASTM standard: {', '.join(missing)}")
+else:
+    if st.button("Generate M&R Plan"):
+        recommended = recommend_treatment(pci, distress_type, severity, traffic_volume, climate_zone, facility_type, pavement_type)
+        st.success("M&R Plan generated per ASTM D6433/D5340. See below for details.")
+        st.markdown(f"""
+        - **Pavement Type**: {pavement_type} ({ASTM_GUIDANCE['pavement_type']['standard']})
+        - **Facility Type**: {facility_type} ({ASTM_GUIDANCE['facility_type']['standard']})
+        - **Segment ID**: {segment_id}
+        - **PCI**: {pci} ({ASTM_GUIDANCE['pci']['standard']})
+        - **Distress**: {distress_type} ({severity}), {extent}%
+        - **Traffic Volume**: {traffic_volume} AADT
+        - **Climate Zone**: {climate_zone}
+        - **Recommended Treatment**: {recommended}
+        - **Selected Treatment**: {treatment}
+        - **Expected Effectiveness**: {treatment_effectiveness} years
+        - **Budget Used**: ${unit_cost * length * width:.2f}
+        """)
+        st.info("For detailed guidance, refer to the official ASTM D6433 or D5340 documentation at each step.")
+
+st.markdown("**Note:** All guidance and field requirements are derived from the relevant ASTM standards. Please consult the standards for full details.")
